@@ -27,17 +27,11 @@ async function extractLinks(url) {
 async function scrapePage(url) {
   const res = await fetch(url);
   const status = res.status;
-  let currentTag;
   let title = '';
   await new HTMLRewriter()
-    .on('*', {
-      element(element) {
-        currentTag = element.tagName;
-      },
+    .on('head > title', {
       text(node) {
-        if (currentTag === 'title') {
-          title += node.text;
-        }
+        title += node.text;
       },
     })
     .transform(res)
@@ -73,7 +67,7 @@ async function handleRequest(request) {
     } else if (!l.startsWith('http')) {
       a.push(scrapePage(`https://${params.s}${l}`));
     }
-    if (a.length === 10) {
+    if (a.length === 20) {
       break;
     }
   }
