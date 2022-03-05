@@ -18,7 +18,6 @@ async function extractLinks(url) {
 }
 
 async function scrapePage(url) {
-  console.log(url);
   let currentTag;
   let title = '';
   await new HTMLRewriter()
@@ -36,7 +35,7 @@ async function scrapePage(url) {
     .text();
   return {
     url,
-    title,
+    title: title.trim(),
   };
 }
 
