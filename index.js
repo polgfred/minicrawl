@@ -8,7 +8,14 @@ async function extractLinks(url) {
     .on('a', {
       element(element) {
         if (element.hasAttribute('href')) {
-          links.push(element.getAttribute('href'));
+          let url = element.getAttribute('href');
+          const hashIndex = url.indexOf('#');
+          if (hashIndex !== -1) {
+            url = url.slice(0, hashIndex);
+          }
+          if (!links.includes(url)) {
+            links.push(url);
+          }
         }
       },
     })
@@ -55,12 +62,8 @@ async function handleRequest(request) {
     });
   }
 
-  if (!params.p) {
-    params.p = '/';
-  }
-
   const a = [];
-  const links = await extractLinks(`https://${params.s}${params.p}`);
+  const links = await extractLinks(`https://${params.s}${params.p || '/'}`);
   for (const l of links) {
     if (l.startsWith(`https://${params.s}/`)) {
       a.push(scrapePage(l));
@@ -75,6 +78,8 @@ async function handleRequest(request) {
   const results = await Promise.all(a);
 
   return new Response(JSON.stringify(results), {
-    headers: { 'content-type': 'text/plain' },
+    headers: {
+      'content-type': 'text/plain;charset=UTF-8',
+    },
   });
 }
