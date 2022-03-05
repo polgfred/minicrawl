@@ -25,6 +25,8 @@ async function extractLinks(url) {
 }
 
 async function scrapePage(url) {
+  const res = await fetch(url);
+  const status = res.status;
   let currentTag;
   let title = '';
   await new HTMLRewriter()
@@ -38,10 +40,11 @@ async function scrapePage(url) {
         }
       },
     })
-    .transform(await fetch(url))
+    .transform(res)
     .text();
   return {
     url,
+    status,
     title: title.trim(),
   };
 }
