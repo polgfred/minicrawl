@@ -2,8 +2,10 @@ addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
 });
 
-async function extractLinks(url) {
+async function scrapeTopLevel({ s, p }) {
+  const top = `https://${s}${p || '/'}`;
   const links = [];
+  let internal = 0;
   await new HTMLRewriter()
     .on('a', {
       element(element) {
@@ -15,13 +17,25 @@ async function extractLinks(url) {
           }
           if (!links.includes(url)) {
             links.push(url);
+            // pagerank
+            if (
+              url.startsWith(`https://${s}`) ||
+              url.startsWith(`//${s}`) ||
+              (!url.startsWith('//') && !url.startsWith('http'))
+            ) {
+              internal++;
+            }
           }
         }
       },
     })
-    .transform(await fetch(url))
+    .transform(await fetch(top))
     .text();
-  return links;
+  console.log(JSON.stringify(links));
+  return {
+    links,
+    pagerank: internal / links.length,
+  };
 }
 
 async function scrapePage(url) {
@@ -60,7 +74,7 @@ async function handleRequest(request) {
   }
 
   const a = [];
-  const links = await extractLinks(`https://${params.s}${params.p || '/'}`);
+  const { links, pagerank } = await scrapeTopLevel(params);
   for (const l of links) {
     if (l.startsWith(`https://${params.s}/`)) {
       a.push(scrapePage(l));
@@ -74,9 +88,15 @@ async function handleRequest(request) {
 
   const results = await Promise.all(a);
 
-  return new Response(JSON.stringify(results), {
-    headers: {
-      'content-type': 'text/plain;charset=UTF-8',
+  return new Response(
+    JSON.stringify({
+      pagerank,
+      results,
+    }),
+    {
+      headers: {
+        'content-type': 'text/plain;charset=UTF-8',
+      },
     },
-  });
+  );
 }
